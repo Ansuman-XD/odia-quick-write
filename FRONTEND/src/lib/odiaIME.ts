@@ -100,6 +100,7 @@ const consonants: Record<string, string> = {
   'jn': 'ଜ୍ଞ',
 };
 
+
 // Special characters and punctuation
 const special: Record<string, string> = {
   '.': '।',
@@ -127,6 +128,85 @@ const nasals: Record<string, string> = {
   'H': 'ଃ',  // Visarga
   '~': 'ଁ',  // Chandrabindu
 };
+// !change 1 - start
+// Odia conjunct consonants (Juktakshyara)
+export const conjuncts: Record<string, string> = {
+  // Velar nasal
+  'Nka': 'ଙ୍କ',
+  'Nkha': 'ଙ୍ଖ',
+  'Nga': 'ଙ୍ଗ',
+  'Ngha': 'ଙ୍ଘ',
+
+  // Palatal nasal
+  'Ncha': 'ଞ୍ଚ',
+  'Nchha': 'ଞ୍ଛ',
+  'Nja': 'ଞ୍ଜ',
+  'Njha': 'ଞ୍ଝ',
+
+  // Retroflex nasal
+  'Nta': 'ଣ୍ଟ',
+  'Ntha': 'ଣ୍ଠ',
+  'Nda': 'ଣ୍ଡ',
+  'Ndha': 'ଣ୍ଢ',
+
+  // Dental nasal
+  'nta': 'ନ୍ତ',
+  'ntha': 'ନ୍ଥ',
+  'nda': 'ନ୍ଦ',
+  'ndha': 'ନ୍ଧ',
+  'nna': 'ନ୍ନ',
+
+  // Labial nasal
+  'mpa': 'ମ୍ପ',
+  'mpha': 'ମ୍ଫ',
+  'mba': 'ମ୍ବ',
+  'mbha': 'ମ୍ଭ',
+  'mma': 'ମ୍ମ',
+
+  // Ra conjuncts
+  'rka': 'ର୍କ',
+  'rga': 'ର୍ଗ',
+  'rgha': 'ର୍ଘ',
+  'rta': 'ର୍ତ',
+  'rtha': 'ର୍ଥ',
+  'rda': 'ର୍ଦ',
+  'rdha': 'ର୍ଧ',
+  'rna': 'ର୍ନ',
+  'rma': 'ର୍ମ',
+  'rpa': 'ର୍ପ',
+  'rba': 'ର୍ବ',
+  'rbha': 'ର୍ଭ',
+  'rsa': 'ର୍ସ',
+  'rsha': 'ର୍ଶ',
+
+  // Sa conjuncts
+  'ska': 'ସ୍କ',
+  'skha': 'ସ୍ଖ',
+  'spa': 'ସ୍ପ',
+  'spha': 'ସ୍ଫ',
+  'sma': 'ସ୍ମ',
+  'sna': 'ସ୍ନ',
+  'sta': 'ସ୍ତ',
+  'stha': 'ସ୍ଥ',
+
+  // Special
+  'ksh': 'କ୍ଷ',
+  'x': 'କ୍ଷ',
+  'gy': 'ଜ୍ଞ',
+  'gn': 'ଜ୍ଞ',
+  'jn': 'ଜ୍ଞ',
+  'tr': 'ତ୍ର',
+  'dv': 'ଦ୍ୱ',
+  'dr': 'ଦ୍ର',
+  'kr': 'କ୍ର',
+  'gr': 'ଗ୍ର',
+  'pr': 'ପ୍ର',
+  'br': 'ବ୍ର',
+  'bhr': 'ଭ୍ର',
+};
+
+
+// !change1 - end
 
 // Common word mappings for quick typing
 const commonWords: Record<string, string> = {
@@ -218,6 +298,13 @@ export interface TransliterationResult {
   suggestions: string[];
   isComplete: boolean;
 }
+const CONJUNCT_KEYS = Object.keys(conjuncts).sort(
+  (a, b) => b.length - a.length
+);
+
+
+
+
 
 // Check if a string ends with a consonant pattern
 function endsWithConsonant(input: string): boolean {
@@ -233,26 +320,36 @@ function endsWithConsonant(input: string): boolean {
 // Parse input and generate transliteration
 export function transliterate(input: string): string {
   if (!input) return '';
-  
-  // Check for common words first
+
   const lowerInput = input.toLowerCase();
   if (commonWords[lowerInput]) {
     return commonWords[lowerInput];
   }
-  
+
   let result = '';
   let i = 0;
   let lastWasConsonant = false;
-  
+
   while (i < input.length) {
     let matched = false;
-    
-    // Try to match longest patterns first
+
+    // ✅ FIX 1: Conjuncts FIRST (longest match, case-insensitive)
+    for (const key of CONJUNCT_KEYS) {
+      if (input.substring(i, i + key.length).toLowerCase() === key.toLowerCase()) {
+        result += conjuncts[key];
+        i += key.length;
+        matched = true;
+        lastWasConsonant = false;
+        break;
+      }
+    }
+    if (matched) continue;
+
+    // Existing longest-match logic
     for (let len = 4; len >= 1 && !matched; len--) {
       const chunk = input.substring(i, i + len);
       const lowerChunk = chunk.toLowerCase();
-      
-      // Check special characters
+
       if (special[chunk]) {
         result += special[chunk];
         i += len;
@@ -260,8 +357,7 @@ export function transliterate(input: string): string {
         lastWasConsonant = false;
         break;
       }
-      
-      // Check nasals
+
       if (nasals[chunk]) {
         result += nasals[chunk];
         i += len;
@@ -269,16 +365,14 @@ export function transliterate(input: string): string {
         lastWasConsonant = false;
         break;
       }
-      
-      // Check consonants
+
       if (consonants[chunk] || consonants[lowerChunk]) {
         const consonant = consonants[chunk] || consonants[lowerChunk];
-        
-        // Check if next character is a vowel
         const remaining = input.substring(i + len);
+
         let vowelMatch = '';
         let vowelLen = 0;
-        
+
         for (let vlen = 2; vlen >= 1; vlen--) {
           const vchunk = remaining.substring(0, vlen);
           if (vowelSigns[vchunk] !== undefined) {
@@ -287,8 +381,7 @@ export function transliterate(input: string): string {
             break;
           }
         }
-        
-        // Check for halant (conjunct)
+
         if (remaining.startsWith('_') || remaining.startsWith('^')) {
           result += consonant + HALANT;
           i += len + 1;
@@ -296,30 +389,22 @@ export function transliterate(input: string): string {
           lastWasConsonant = true;
           break;
         }
-        
+
         if (vowelLen > 0) {
           result += consonant + vowelMatch;
           i += len + vowelLen;
         } else {
-          // Default inherent 'a' vowel - but suppress at word end
-          const nextChar = input[i + len];
-          if (nextChar && /[a-zA-Z]/.test(nextChar)) {
-            result += consonant;
-          } else {
-            result += consonant;
-          }
+          result += consonant;
           i += len;
         }
-        
+
         matched = true;
         lastWasConsonant = !vowelLen;
         break;
       }
-      
-      // Check vowels (standalone)
+
       if (vowels[chunk] || vowels[lowerChunk]) {
         if (lastWasConsonant && vowelSigns[chunk]) {
-          // Add vowel sign to previous consonant
           result += vowelSigns[chunk];
         } else {
           result += vowels[chunk] || vowels[lowerChunk];
@@ -330,17 +415,18 @@ export function transliterate(input: string): string {
         break;
       }
     }
-    
-    // If no match, keep the character as-is
+
     if (!matched) {
       result += input[i];
       i++;
       lastWasConsonant = false;
     }
   }
-  
+
   return result;
 }
+
+
 
 // Generate suggestions for partial input
 export function getSuggestions(input: string, maxSuggestions: number = 5): string[] {
