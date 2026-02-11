@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toOdiaNumeral } from '@/lib/odiaIME';
 
+
 // Odia section names
 const sectionNames = [
   { name: 'Section A', odiaName: 'ବିଭାଗ - କ' },
