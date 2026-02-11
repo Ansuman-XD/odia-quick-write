@@ -100,42 +100,93 @@ export function QuestionEditor({ question, index, onSave, onCancel, onDelete }: 
   }, [activeField, activeOptionIndex, currentWord, editedQuestion]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!showSuggestions) return;
 
-    switch (e.key) {
-      case 'ArrowUp':
-        e.preventDefault();
-        setActiveSuggestion(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        setActiveSuggestion(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
-        break;
-      case 'Enter':
-        if (suggestions[activeSuggestion]) {
-          e.preventDefault();
-          handleSuggestionSelect(suggestions[activeSuggestion]);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setShowSuggestions(false);
-        break;
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-        if (showSuggestions) {
-          const idx = parseInt(e.key) - 1;
-          if (suggestions[idx]) {
-            e.preventDefault();
-            handleSuggestionSelect(suggestions[idx]);
-          }
-        }
-        break;
+  // 🔥 Convert on SPACE
+  if (e.key === ' ' && currentWord) {
+    e.preventDefault();
+
+    const odiaWord = transliterate(currentWord);
+
+    if (activeField === 'text') {
+      const text = editedQuestion.text;
+      const newText =
+        text.slice(0, text.length - currentWord.length) +
+        odiaWord +
+        ' ';
+      setEditedQuestion(prev => ({ ...prev, text: newText }));
     }
-  }, [showSuggestions, suggestions, activeSuggestion, handleSuggestionSelect]);
+
+    else if (activeField === 'option' && activeOptionIndex !== null) {
+      const optionText = editedQuestion.options?.[activeOptionIndex] || '';
+      const newText =
+        optionText.slice(0, optionText.length - currentWord.length) +
+        odiaWord +
+        ' ';
+      setEditedQuestion(prev => ({
+        ...prev,
+        options: prev.options?.map((opt, i) =>
+          i === activeOptionIndex ? newText : opt
+        ),
+      }));
+    }
+
+    setCurrentWord('');
+    setShowSuggestions(false);
+    return;
+  }
+
+  if (!showSuggestions) return;
+
+  switch (e.key) {
+    case 'ArrowUp':
+      e.preventDefault();
+      setActiveSuggestion(prev =>
+        prev > 0 ? prev - 1 : suggestions.length - 1
+      );
+      break;
+
+    case 'ArrowDown':
+      e.preventDefault();
+      setActiveSuggestion(prev =>
+        prev < suggestions.length - 1 ? prev + 1 : 0
+      );
+      break;
+
+    case 'Enter':
+      if (suggestions[activeSuggestion]) {
+        e.preventDefault();
+        handleSuggestionSelect(suggestions[activeSuggestion]);
+      }
+      break;
+
+    case 'Escape':
+      e.preventDefault();
+      setShowSuggestions(false);
+      break;
+
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+      const idx = parseInt(e.key) - 1;
+      if (suggestions[idx]) {
+        e.preventDefault();
+        handleSuggestionSelect(suggestions[idx]);
+      }
+      break;
+  }
+}, [
+  showSuggestions,
+  suggestions,
+  activeSuggestion,
+  handleSuggestionSelect,
+  currentWord,
+  activeField,
+  activeOptionIndex,
+  editedQuestion
+]);
+
 
   const addOption = () => {
     setEditedQuestion(prev => ({
